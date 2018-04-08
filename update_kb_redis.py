@@ -493,12 +493,14 @@ def update_kb_redis():
                 keyboard_info['platform'] = rules_mk['MCU_LDSCRIPT']
             if 'MCU_LDSCRIPT' in rules_mk:
                 keyboard_info['processor'] = rules_mk['MCU_LDSCRIPT']
+            keyboard_info['bootloader'] = rules_mk.get('BOOTLOADER', 'stm32-dfu')
         else:
             # AVR processors
             if 'ARCH' in rules_mk:
                 keyboard_info['platform'] = rules_mk['ARCH']
             if 'MCU' in rules_mk:
                 keyboard_info['processor'] = rules_mk['MCU']
+            keyboard_info['bootloader'] = rules_mk.get('BOOTLOADER', 'atmel-dfu')
 
         keyboard_info['identifier'] = ':'.join((keyboard_info.get('vendor_id', 'unknown'), keyboard_info.get('product_id', 'unknown'), keyboard_info.get('device_ver', 'unknown')))
 
