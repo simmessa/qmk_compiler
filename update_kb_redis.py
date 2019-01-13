@@ -25,6 +25,9 @@ layers_re = re.compile(r'\[[^\]]*]=[0-9A-Z_]*\([^[]*\)')
 layout_macro_re = re.compile(r']=(LAYOUT[0-9a-z_]*)\(')
 keymap_macro_re = re.compile(r']=(KEYMAP[0-9a-z_]*)\(')
 
+# Processors
+ARM_PROCESSORS = 'cortex-m0', 'cortex-m0plus', 'cortex-m3', 'cortex-m4', 'STM32F042', 'STM32F072', 'STM32F303'
+AVR_PROCESSORS = 'at90usb1286', 'at90usb646', 'atmega16u2', 'atmega32a', 'atmega32u2', 'atmega32u4'
 
 @memoize
 def list_keyboards():
@@ -454,6 +457,8 @@ def update_kb_redis():
 
     # Update redis with the latest data
     kb_list = []
+    usb_list = {}  # Structure: VENDOR_ID: {PRODUCT_ID: {KEYBOARD_FOLDER: {'vendor_id': VENDOR_ID, 'product_id': PRODUCT_ID, 'device_ver': DEVICE_VER, 'manufacturer': MANUFACTURER, 'product': PRODUCT, 'keyboard': KEYBOARD_FOLDER}
+
     cached_json = {'last_updated': strftime('%Y-%m-%d %H:%M:%S %Z'), 'keyboards': {}}
     for keyboard in list_keyboards():
         keyboard_info = {
@@ -505,38 +510,55 @@ def update_kb_redis():
         config_h = parse_config_h(keyboard)
         rules_mk = parse_rules_mk(keyboard)
 
+        usb_entry = {'keyboard': keyboard}
         for key in ('VENDOR_ID', 'PRODUCT_ID', 'DEVICE_VER', 'MANUFACTURER', 'DESCRIPTION'):
             if key in config_h:
                 if key in ('VENDOR_ID', 'PRODUCT_ID', 'DEVICE_VER'):
-                    config_h[key].replace('0x', '')
-                    config_h[key] = config_h[key].upper()
+                    print('Replacing %s before %s' % (key, config_h[key]))
+                    config_h[key] = config_h[key].replace('0x', '')
+                    config_h[key] = '0x' + config_h[key].upper()
+                    print('Replacing %s after %s' % (key, config_h[key]))
                 keyboard_info[key.lower()] = config_h[key]
+                usb_entry[key.lower()] = config_h[key]
 
-        if 'ARMV' in rules_mk:
+        # Populate the usb_list entry for this keyboard
+        vendor_id = usb_entry.get('vendor_id', 'FEED')
+        product_id = usb_entry.get('product_id', '0000')
+
+        if vendor_id not in usb_list:
+            usb_list[vendor_id] = {}
+
+        if product_id not in usb_list[vendor_id]:
+            usb_list[vendor_id][product_id] = {}
+
+        usb_list[vendor_id][product_id][keyboard] = usb_entry
+
+        # Setup platform specific keys
+        if rules_mk.get('MCU') in ARM_PROCESSORS:
             keyboard_info['processor_type'] = 'arm'
-            # ARM processors
-            if 'MCU' in rules_mk:
-                keyboard_info['platform'] = rules_mk['MCU_LDSCRIPT']
-            if 'MCU_LDSCRIPT' in rules_mk:
-                keyboard_info['processor'] = rules_mk['MCU_LDSCRIPT']
-            if 'BOOTLOADER' in rules_mk:
-                keyboard_info['bootloader'] = rules_mk['BOOTLOADER']
-            if 'bootloader' not in keyboard_info:
+            keyboard_info['bootloader'] = rules_mk['BOOTLOADER'] if 'BOOTLOADER' in rules_mk else 'unknown'
+            keyboard_info['processor'] = rules_mk['MCU'] if 'MCU' in rules_mk else 'unknown'
+            if keyboard_info['bootloader'] == 'unknown':
                 if 'STM32' in keyboard_info['processor']:
                     keyboard_info['bootloader'] = 'stm32-dfu'
                 elif keyboard_info.get('manufacturer') == 'Input Club':
                     keyboard_info['bootloader'] = 'kiibohd-dfu'
-        else:
+            if 'STM32' in keyboard_info['processor']:
+                keyboard_info['platform'] = 'STM32'
+            elif 'MCU_SERIES' in rules_mk:
+                keyboard_info['platform'] = rules_mk['MCU_SERIES']
+            elif 'ARM_ATSAM' in rules_mk:
+                keyboard_info['platform'] = 'ARM_ATSAM'
+        elif rules_mk.get('MCU') in AVR_PROCESSORS:
             keyboard_info['processor_type'] = 'avr'
-            # AVR processors
-            if 'ARCH' in rules_mk:
-                keyboard_info['platform'] = rules_mk['ARCH']
-            if 'MCU' in rules_mk:
-                keyboard_info['processor'] = rules_mk['MCU']
-            if 'BOOTLOADER' in rules_mk:
-                keyboard_info['bootloader'] = rules_mk['BOOTLOADER']
-            if 'bootloader' not in keyboard_info:
-                keyboard_info['bootloader'] = 'atmel-dfu'
+            keyboard_info['bootloader'] = rules_mk['BOOTLOADER'] if 'BOOTLOADER' in rules_mk else 'atmel-dfu'
+            keyboard_info['platform'] = rules_mk['ARCH'] if 'ARCH' in rules_mk else 'unknown'
+            keyboard_info['processor'] = rules_mk['MCU'] if 'MCU' in rules_mk else 'unknown'
+        else:
+            keyboard_info['bootloader'] = 'unknown'
+            keyboard_info['platform'] = 'unknown'
+            keyboard_info['processor'] = 'unknown'
+            keyboard_info['processor_type'] = 'unknown'
 
         keyboard_info['identifier'] = ':'.join((keyboard_info.get('vendor_id', 'unknown'), keyboard_info.get('product_id', 'unknown'), keyboard_info.get('device_ver', 'unknown')))
 
@@ -567,6 +589,7 @@ def update_kb_redis():
     # Update the global redis information
     qmk_redis.set('qmk_api_keyboards', kb_list)
     qmk_redis.set('qmk_api_kb_all', cached_json)
+    qmk_redis.set('qmk_api_usb_list', usb_list)
     qmk_redis.set('qmk_api_last_updated', {'git_hash': git_hash(), 'last_updated': strftime('%Y-%m-%d %H:%M:%S %Z')})
     qmk_redis.set('qmk_api_update_error_log', error_log)
 
