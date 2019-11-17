@@ -14,4 +14,4 @@ until redis-cli -h $REDIS_HOST get mypasswd; do
   sleep 5
 done
 
-exec rq worker -u redis://@${REDIS_HOST}:${REDIS_PORT}/0
+exec rq worker -v -u redis://@${REDIS_HOST}:${REDIS_PORT}/0
