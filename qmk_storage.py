@@ -29,24 +29,25 @@ __KEYMAP_GOES_HERE__
 };
 """
 
-# Objects we need to instaniate
-session = boto3.session.Session()
-s3 = session.client(
-    's3',
-    region_name=S3_LOCATION,
-    endpoint_url=S3_HOST,
-    aws_access_key_id=S3_ACCESS_KEY,
-    aws_secret_access_key=S3_SECRET_KEY,
-    config=botocore.client.Config(signature_version='s3'),
-)
+# Setup S3
+if STORAGE_ENGINE == 's3':
+    session = boto3.session.Session()
+    s3 = session.client(
+        's3',
+        region_name=S3_LOCATION,
+        endpoint_url=S3_HOST,
+        aws_access_key_id=S3_ACCESS_KEY,
+        aws_secret_access_key=S3_SECRET_KEY,
+        config=botocore.client.Config(signature_version='s3'),
+    )
 
-# Check to see if S3 is working, and if not print an error in the log.
-try:
-    s3.create_bucket(Bucket=S3_BUCKET)
-except Exception as e:
-    if e.__class__.__name__ not in ['BucketAlreadyOwnedByYou', 'BucketAlreadyExists']:
-        logging.warning('Could not contact S3! Storage related functionality will not work!')
-        #logging.exception(e)
+    # Check to see if S3 is working, and if not print an error in the log.
+    try:
+        s3.create_bucket(Bucket=S3_BUCKET)
+    except Exception as e:
+        if e.__class__.__name__ not in ['BucketAlreadyOwnedByYou', 'BucketAlreadyExists']:
+            logging.warning('Could not contact S3! Storage related functionality will not work!')
+            #logging.exception(e)
 
 
 def delete(object, **kwargs):
