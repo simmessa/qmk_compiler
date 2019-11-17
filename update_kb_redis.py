@@ -676,12 +676,12 @@ def update_kb_redis():
 
 
 if __name__ == '__main__':
-    print 73*'='
-    print 73*'-'
-    print 'Fetching the latest QMK Firmware from %s' % QMK_GIT_URL
-    print 'and generating API data. This will take a few minutes...'
-    print 73*'-'
-    print 73*'='
+    print(73*'=')
+    print(73*'-')
+    print('Fetching the latest QMK Firmware from %s' % QMK_GIT_URL)
+    print('and generating API data. This will take a few minutes...')
+    print(73*'-')
+    print(73*'=')
     debug = True
 
     import sys
