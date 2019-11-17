@@ -582,14 +582,17 @@ def update_kb_redis():
 if __name__ == '__main__':
     import sys
 
+    debug = True
+
+    print('\n')
     print(73*'=')
     print(73*'-')
     print('Fetching QMK Firmware from %s' % QMK_GIT_URL)
-    print('and generating API data. This will take a few minutes...')
+    print('and generating API data. This may take a few minutes...')
     print(73*'-')
     print(73*'=')
+    print('\n')
     sys.stdout.flush()
-    debug = True
 
     if len(sys.argv) > 1:
         keyboard = sys.argv[1]
