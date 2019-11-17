@@ -1,5 +1,5 @@
 from glob import glob
-from os import chdir, listdir, mkdir
+from os import chdir, environ, listdir, mkdir
 from os.path import exists
 from shutil import rmtree
 from subprocess import check_output, STDOUT, run, PIPE
@@ -12,7 +12,7 @@ from bs4 import UnicodeDammit
 from rq.decorators import job
 
 import qmk_redis
-from qmk_commands import checkout_qmk, memoize, git_hash
+from qmk_commands import checkout_qmk, memoize, git_hash, QMK_GIT_URL
 
 debug = False
 default_key_entry = {'x': -1, 'y': -1, 'w': 1}
@@ -676,6 +676,12 @@ def update_kb_redis():
 
 
 if __name__ == '__main__':
+    print 73*'='
+    print 73*'-'
+    print 'Fetching the latest QMK Firmware from %s' % QMK_GIT_URL
+    print 'and generating API data. This will take a few minutes...'
+    print 73*'-'
+    print 73*'='
     debug = True
 
     import sys
