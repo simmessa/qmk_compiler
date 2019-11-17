@@ -130,7 +130,7 @@ def save_file(local_filename, remote_filename):
         else:
             file_path = '../%s/%s' % (FILESYSTEM_PATH, remote_filename)
         mkdir(dirname(file_path))
-        copyfile(local_filename, remote_filename)
+        copyfile(local_filename, file_path)
 
 
 def put(filename, value):
