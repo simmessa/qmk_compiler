@@ -580,15 +580,17 @@ def update_kb_redis():
 
 
 if __name__ == '__main__':
+    import sys
+
     print(73*'=')
     print(73*'-')
-    print('Fetching the latest QMK Firmware from %s' % QMK_GIT_URL)
+    print('Fetching QMK Firmware from %s' % QMK_GIT_URL)
     print('and generating API data. This will take a few minutes...')
     print(73*'-')
     print(73*'=')
+    sys.stdout.flush()
     debug = True
 
-    import sys
     if len(sys.argv) > 1:
         keyboard = sys.argv[1]
         cached_json = {'last_updated': strftime('%Y-%m-%d %H:%M:%S %Z'), 'keyboards': {}}
