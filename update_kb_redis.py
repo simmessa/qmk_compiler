@@ -14,7 +14,7 @@ from rq.decorators import job
 import qmk_redis
 from qmk_commands import checkout_qmk, memoize, git_hash
 
-debug = False
+debug = True
 default_key_entry = {'x': -1, 'y': -1, 'w': 1}
 error_log = []
 
@@ -553,6 +553,8 @@ def process_keyboard(keyboard, usb_list, kb_list, kb_entries):
     """Parse all the files associated with a specific keyboard to build an API object for it.
     """
     keyboard_info = build_keyboard_info(keyboard)
+
+    print(keyboard_info)
 
     for layout_name, layout_json in find_all_layouts(keyboard).items():
         if not layout_name.startswith('LAYOUT_kc'):
